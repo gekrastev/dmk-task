@@ -1,6 +1,8 @@
 import { S3CreateEvent } from 'aws-lambda';
 import * as fs from 'fs';
 import { LambdaResponse } from './interfaces/LambdaResponse';
+import { LambdaHandler } from './implementations/LambdaHandler';
+import { NodeJsFileReader } from './implementations/NodeJsFileReader';
 
 /**
  *
@@ -13,28 +15,8 @@ import { LambdaResponse } from './interfaces/LambdaResponse';
  */
 
 export const lambdaHandler = async (event: S3CreateEvent): Promise<LambdaResponse> => {
-    try {
-        // Specify the path to the local file
-        const localFilePath = './x509.pem';
-        console.log(event);
-        // Read the local file
-        const content = fs.readFileSync(localFilePath, 'utf-8');
+    const fileReader = new NodeJsFileReader(); // used when testing locally
+    const lambdaHandler = new LambdaHandler(fileReader);
 
-        // Do something with the content
-        console.log('Content of the local file:', content);
-
-        // Continue processing
-        // ...
-
-        return {
-            statusCode: 200,
-            body: 'File content read successfully.',
-        };
-    } catch (error) {
-        console.error('Error:', error);
-        return {
-            statusCode: 500,
-            body: 'An error occurred while reading the local file.',
-        };
-    }
+    return await lambdaHandler.handleEvent();
 };
