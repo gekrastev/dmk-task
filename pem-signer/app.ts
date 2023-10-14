@@ -1,8 +1,10 @@
 import { S3CreateEvent } from 'aws-lambda';
-import * as fs from 'fs';
-import { LambdaResponse } from './interfaces/LambdaResponse';
 import { LambdaHandler } from './implementations/LambdaHandler';
 import { NodeJsFileReader } from './implementations/NodeJsFileReader';
+import { PemDataExtractor } from './implementations/PemDataExtractor';
+import { PemFileParser } from './implementations/PemFileParser';
+import { LambdaResponse } from './interfaces/types';
+import { PublicKeySigner } from './implementations/PublicKeySinger';
 
 /**
  *
@@ -16,7 +18,10 @@ import { NodeJsFileReader } from './implementations/NodeJsFileReader';
 
 export const lambdaHandler = async (event: S3CreateEvent): Promise<LambdaResponse> => {
     const fileReader = new NodeJsFileReader(); // used when testing locally
-    const lambdaHandler = new LambdaHandler(fileReader);
+    const certificateParser = new PemFileParser();
+    const dataExtractor = new PemDataExtractor();
+    const publicKeySigner = new PublicKeySigner();
+    const lambdaHandler = new LambdaHandler(fileReader, certificateParser, dataExtractor, publicKeySigner);
 
     return await lambdaHandler.handleEvent();
 };
