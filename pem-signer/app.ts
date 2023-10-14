@@ -4,7 +4,8 @@ import { NodeJsFileReader } from './implementations/NodeJsFileReader';
 import { PemDataExtractor } from './implementations/PemDataExtractor';
 import { PemFileParser } from './implementations/PemFileParser';
 import { LambdaResponse } from './interfaces/types';
-import { PublicKeySigner } from './implementations/PublicKeySinger';
+import { RSAKeySigner } from './implementations/RSAKeySigner';
+import { ED25519KeySigner } from './implementations/ED25519KeySigner';
 
 /**
  *
@@ -20,7 +21,10 @@ export const lambdaHandler = async (event: S3CreateEvent): Promise<LambdaRespons
     const fileReader = new NodeJsFileReader(); // used when testing locally
     const certificateParser = new PemFileParser();
     const dataExtractor = new PemDataExtractor();
-    const publicKeySigner = new PublicKeySigner();
+    // you can choose which algorithm to use by instantiating either one of the classes implementing  PEMKeySigner interface
+    const publicKeySigner = new RSAKeySigner();
+    // const publicKeySigner = new ED25519KeySigner();
+
     const lambdaHandler = new LambdaHandler(fileReader, certificateParser, dataExtractor, publicKeySigner);
 
     return await lambdaHandler.handleEvent();

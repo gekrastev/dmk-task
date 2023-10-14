@@ -1,7 +1,7 @@
 import { DataExtractor } from '../interfaces/DataExtractor';
 import { FileReader } from '../interfaces/FileReader';
 import { PEMKeySigner } from '../interfaces/PEMKeySigner';
-import { LambdaResponse, SupportedAlgorithms } from '../interfaces/types';
+import { LambdaResponse } from '../interfaces/types';
 import { PemFileParser } from './PemFileParser';
 //TODO ADD LambdaHandler interface
 export class LambdaHandler {
@@ -28,14 +28,8 @@ export class LambdaHandler {
             const parsedCertificate = this.certificateParser.parsePemFileToX509(fileContent);
             const certificateCommonName = this.dataExtractor.extractCommonName(parsedCertificate);
             const publicKeyPEM = this.dataExtractor.extractPublicKeyToPEM(parsedCertificate);
-            const signedPublicKey = await this.publicKeySigner.signPEMKey(publicKeyPEM, SupportedAlgorithms.RSA);
+            const signedPublicKey = await this.publicKeySigner.signPEMKey(publicKeyPEM);
             console.log(certificateCommonName, signedPublicKey);
-
-            // Do something with the content
-            // console.log('Content of the local file:', content);
-
-            // Continue processing
-            // ...
 
             return {
                 statusCode: 200,
