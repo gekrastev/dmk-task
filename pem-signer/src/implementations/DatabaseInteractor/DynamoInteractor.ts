@@ -7,7 +7,7 @@ export class DynamoInteractor implements DatabaseInteractor {
     this.dynamoClient = new AWS.DynamoDB.DocumentClient();
   }
   savePublicKey = async (commonName: string, publicKey: string) => {
-    const doc = await this.dynamoClient
+    return await this.dynamoClient
       .put({
         TableName: process.env.TABLE_NAME!,
         Item: {
@@ -16,6 +16,5 @@ export class DynamoInteractor implements DatabaseInteractor {
         },
       })
       .promise();
-    console.log(doc);
   };
 }
