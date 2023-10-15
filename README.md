@@ -68,5 +68,9 @@ Send the event. After execution is complete, check your Dynamo Table to see the 
 Currently, the application is reading the PEM file from the same directory as the index.js file because I have not figured out why I am getting an "Access Denied" error when accessing the file from the S3 Bucket. The S3 Trigger is working correctly, but I can't quite figure out the permissions yet.
 Because of this, the application is using a local file reader (Node fs) instead of the AWS S3 SDK. In order to get it working with it, OR in order to switch up the encryption algorithm, uncomment the corresponding lines in the index.ts. After that compile and deploy again.
 
+###TODO
+1. Fix S3 Access Denied Issue
+2. Add AWS SDK to a Lambda Layer.
+
 ## Cleanup
 **To delete the stack you need to make sure that your S3 bucket is empty. After that, you can delete it via the AWS CLI or the Management Console.**
