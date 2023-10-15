@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: Name of the S3 bucket
+    Default: dmk-task-bucket
+
+  S3CodeBucketName:
+    Type: String
+    Description: Name of the S3 bucket where the code is stored
+    Default: dmk-task-lambda-code-bucket
+
+  S3CodeZipPath:
+    Type: String
+    Description: path to the .zip in the s3
+    Default: dist.zip
+
+  IAMRoleName:
+    Type: String
+    Description: Name of the IAM Role
+    Default: dmk-task-iam-role
+
+  IAMPolicyName:
+    Type: String
+    Description: Name of the IAM Policy
+    Default: dmk-task-iam-policy
+
+  DbName:
+    Type: String
+    Description: Name of the IAM Policy
+    Default: dmk-task-dynamodb
+
+  LambdaName:
+    Type: String
+    Description: Name of the IAM Policy
+    Default: dmk-task-lambda
+
+Resources:
+  #s3
+  S3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: !Ref S3BucketName
+      AccessControl: Private
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt LambdaFunction.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: ".pem"
+
+  #lambda invoke permission
+  ProcessingLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !Ref LambdaFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Sub "arn:aws:s3:::${S3BucketName}"
+      # SourceArn: !GetAtt S3Bucket.Arn
+      SourceAccount: !Ref AWS::AccountId
+
+  #dynamoDb
+  DynamoDbTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DbName
+      AttributeDefinitions:
+        - AttributeName: commonName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: commonName
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+
+  #iam-role
+  LambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: !Ref IAMRoleName
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Ref IAMPolicyName
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource: arn:aws:s3:::${S3BucketName}
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt DynamoDbTable.Arn # Replace with your DynamoDB table ARN
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+
+  #lambda
+  LambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: !Ref LambdaName
+      Handler: dist/index.lambdaHandler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref S3CodeBucketName
+        S3Key: !Ref S3CodeZipPath
+      Runtime: nodejs18.x
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref S3BucketName
+          TABLE_NAME: !Ref DbName
+
+Outputs:
+  LambdaFunction:
+    Description: "Lambda Function ARN"
+    Value: !GetAtt LambdaFunction.Arn
+  LambdaExecutionRole:
+    Description: "Implicit IAM Role created for PemSigner function"
+    Value: !GetAtt LambdaExecutionRole.Arn
+  S3BucketName:
+    Value: !GetAtt S3Bucket.Arn
+    Description: S3 Bucket where the pem files will be stored
+  DynamoDbTable:
+    Value: !GetAtt DynamoDbTable.Arn
+    Description: Dynamo Db instance
