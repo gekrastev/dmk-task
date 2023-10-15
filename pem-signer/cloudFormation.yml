@@ -41,7 +41,9 @@ Resources:
     Type: "AWS::S3::Bucket"
     Properties:
       BucketName: !Ref S3BucketName
-      AccessControl: Private
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
       NotificationConfiguration:
         LambdaConfigurations:
           - Event: s3:ObjectCreated:*
@@ -60,7 +62,6 @@ Resources:
       FunctionName: !Ref LambdaFunction
       Principal: s3.amazonaws.com
       SourceArn: !Sub "arn:aws:s3:::${S3BucketName}"
-      # SourceArn: !GetAtt S3Bucket.Arn
       SourceAccount: !Ref AWS::AccountId
 
   #dynamoDb
@@ -102,11 +103,13 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                   - s3:ListBucket
-                Resource: arn:aws:s3:::${S3BucketName}
+                Resource:
+                  - arn:aws:s3:::${S3BucketName}
+                  - arn:aws:s3:::${S3BucketName}/*
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
-                Resource: !GetAtt DynamoDbTable.Arn # Replace with your DynamoDB table ARN
+                Resource: !GetAtt DynamoDbTable.Arn
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 
